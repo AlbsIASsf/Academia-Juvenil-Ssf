@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academia Juvenil</title>
+    <style>
+        :root {
+            --primary-color: #0f172a;
+            --accent-color: #0d9488;
+            --accent-hover: #0f766e;
+            --bg-color: #ffffff;
+            --card-bg: #f8fafc;
+            --text-color: #334155;
+            --nav-height: 62px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+        html { scroll-behavior: smooth; }
+        body { background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; padding-top: var(--nav-height); overflow-x: hidden; }
+        body.modal-abierto { overflow: hidden; }
+        body.modal-abierto .btn-flotante,
+        body.modal-abierto .btn-whatsapp { display: none; }
+
+        /* ================= ANIMACIONES EN SCROLL (REFINADAS) ================= */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px) scale(0.97);
+            filter: blur(4px);
+            transition:
+                opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                filter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            transition-delay: var(--reveal-delay, 0s);
+            will-change: opacity, transform, filter;
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+        }
+
+        /* Variante para elementos que entran deslizando desde el lateral (usada en textos hero) */
+        .reveal-left {
+            opacity: 0;
+            transform: translateX(-32px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            transition-delay: var(--reveal-delay, 0s);
+        }
+        .reveal-left.visible { opacity: 1; transform: translateX(0); }
+
+        .reveal-right {
+            opacity: 0;
+            transform: translateX(32px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            transition-delay: var(--reveal-delay, 0s);
+        }
+        .reveal-right.visible { opacity: 1; transform: translateX(0); }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal, .reveal-left, .reveal-right {
+                transition: none !important;
+                opacity: 1 !important;
+                transform: none !important;
+                filter: none !important;
+            }
+        }
+
+        a, button, input, select, .tarjeta-paso, .faq-item {
+            transition: all 0.25s ease;
+        }
+
+        /* ================= NAVEGACIÓN (MOBILE FIRST) ================= */
+        nav {
+            position: fixed; top: 0; left: 0; width: 100%;
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 16px; z-index: 1000;
+        }
+        .nav-logo { font-weight: 800; font-size: 1.05rem; color: var(--primary-color); letter-spacing: -0.5px; }
+        .nav-right { display: flex; align-items: center; gap: 10px; }
+
+        .nav-toggle {
+            display: flex; align-items: center; justify-content: center;
+            width: 42px; height: 42px; border-radius: 10px;
+            background: #f1f5f9; border: 1px solid #e2e8f0; color: var(--primary-color);
+            font-size: 1.25rem; cursor: pointer; flex-shrink: 0;
+        }
+        .nav-toggle:hover { background: #e2e8f0; }
+
+        .nav-links {
+            position: absolute; top: 100%; left: 0; width: 100%;
+            background: #ffffff; border-top: 1px solid #f1f5f9;
+            display: flex; flex-direction: column; align-items: stretch; gap: 4px;
+            padding: 0 16px; max-height: 0; overflow: hidden; opacity: 0;
+            box-shadow: 0 12px 20px rgba(0,0,0,0.06);
+            transition: max-height 0.35s ease, opacity 0.25s ease, padding 0.35s ease;
+        }
+        .nav-links.abierto { max-height: 400px; opacity: 1; padding: 10px 16px 18px; }
+        .nav-links a {
+            text-decoration: none; color: var(--text-color); font-size: 1rem; font-weight: 500;
+            padding: 12px 8px; border-radius: 8px;
+        }
+        .nav-links a:hover, .nav-links a:active { color: var(--accent-color); background: var(--card-bg); }
+
+        .btn-nav-registro {
+            background-color: var(--accent-color); color: white !important;
+            padding: 9px 16px; border-radius: 50px; font-weight: 600; font-size: 0.88rem;
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2); white-space: nowrap;
+        }
+        .btn-nav-registro:hover { background-color: var(--accent-hover); transform: translateY(-2px); }
+
+        /* Hero */
+        .hero-container {
+            max-width: 1100px; margin: 24px auto; padding: 24px 16px;
+            display: flex; flex-direction: column; gap: 28px;
+        }
+        .hero-text h1 {
+            font-size: clamp(1.55rem, 5.5vw, 2.6rem); color: var(--primary-color); line-height: 1.2;
+            margin-bottom: 16px; font-weight: 800; letter-spacing: -0.5px;
+        }
+        .hero-text p { color: #64748b; font-size: clamp(0.98rem, 2.2vw, 1.1rem); margin-bottom: 22px; }
+        .hero-text .btn-principal { width: 100%; }
+
+        .hero-card {
+            background: var(--card-bg); border: 1px solid #e2e8f0;
+            padding: 26px 22px; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); text-align: center;
+        }
+        .hero-card h3 { color: var(--primary-color); font-size: 1.2rem; margin-bottom: 10px; }
+        .hero-card p { color: #64748b; font-size: 0.95rem; margin-bottom: 15px; }
+
+        .badge-cupos {
+            display: inline-block; background: #fef3c7; color: #b45309;
+            padding: 5px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; margin-bottom: 20px;
+        }
+        .btn-principal {
+            display: inline-block; background-color: var(--accent-color); color: white;
+            padding: 15px 28px; border-radius: 50px; text-decoration: none; font-weight: 600;
+            border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(13, 148, 136, 0.25);
+            width: 100%; text-align: center; font-size: 1rem;
+        }
+        .btn-principal:hover { background-color: var(--accent-hover); transform: translateY(-2px); }
+
+        /* Secciones Generales */
+        .section-proceso { max-width: 1100px; margin: 48px auto; padding: 0 16px; text-align: center; }
+        .badge-proceso {
+            display: inline-block; background: #f1f5f9; color: var(--accent-color);
+            padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-bottom: 15px;
+        }
+        .section-proceso h2 { font-size: clamp(1.5rem, 4.5vw, 2.2rem); color: var(--primary-color); margin-bottom: 10px; font-weight: 800; }
+        .section-proceso > p { color: #64748b; font-size: 0.98rem; margin-bottom: 32px; }
+
+        /* ================= CARRUSEL FLUIDO INTERACTIVO ================= */
+        .carrusel-container {
+            position: relative;
+            max-width: 900px;
+            margin: 0 auto;
+            overflow: hidden;
+            padding: 10px 0 26px 0;
+        }
+        .carrusel-track {
+            display: flex;
+            gap: 16px;
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            will-change: transform;
+        }
+        .tarjeta-carrusel {
+            width: 100%;
+            min-width: 100%;
+            max-width: 100%;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            padding: 28px 22px;
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .tarjeta-carrusel:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+            box-shadow: 0 15px 35px rgba(13, 148, 136, 0.08);
+        }
+        .tarjeta-carrusel .icono-beneficio {
+            display: inline-block; background: #f0fdf4; color: var(--accent-color);
+            width: 50px; height: 50px; border-radius: 50%; text-align: center;
+            line-height: 50px; font-size: 1.5rem; font-weight: 700; margin-bottom: 15px;
+        }
+        .tarjeta-carrusel h4 { color: var(--primary-color); font-size: 1.15rem; margin-bottom: 10px; font-weight: 700; }
+        .tarjeta-carrusel p { color: #64748b; font-size: 0.95rem; line-height: 1.5; }
+
+        .carrusel-controles { display: flex; justify-content: center; gap: 15px; margin-top: 18px; align-items: center; }
+        .btn-control-carrusel {
+            background: #f1f5f9; color: var(--primary-color); border: 1px solid #cbd5e1;
+            width: 44px; height: 44px; border-radius: 50%; cursor: pointer; font-size: 1.1rem;
+            font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .btn-control-carrusel:hover { background: var(--accent-color); color: white; border-color: var(--accent-color); transform: scale(1.05); }
+
+        .carrusel-puntos { display: flex; gap: 8px; align-items: center; }
+        .punto-carrusel { width: 10px; height: 10px; border-radius: 50%; background: #cbd5e1; cursor: pointer; transition: all 0.3s; }
+        .punto-carrusel.activo { background: var(--accent-color); width: 24px; border-radius: 6px; }
+
+        /* Cuadrículas (Proceso y Control) — mobile first: 1 columna */
+        .grid-pasos { display: grid; grid-template-columns: 1fr; gap: 16px; text-align: left; }
+        .tarjeta-paso {
+            background: #ffffff; border: 1px solid #e2e8f0; padding: 24px 20px;
+            border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); position: relative;
+        }
+        .tarjeta-paso:hover { transform: translateY(-5px); box-shadow: 0 12px 25px rgba(0,0,0,0.05); }
+        .numero-paso {
+            display: inline-block; background: #f0fdf4; color: var(--accent-color);
+            width: 36px; height: 36px; border-radius: 50%; text-align: center;
+            line-height: 36px; font-weight: 700; margin-bottom: 15px;
+        }
+        .tarjeta-paso h4 { color: var(--primary-color); font-size: 1.08rem; margin-bottom: 8px; }
+        .tarjeta-paso p { color: #64748b; font-size: 0.92rem; }
+
+        /* FAQ */
+        .faq-container { max-width: 800px; margin: 0 auto; text-align: left; }
+        .faq-item {
+            background: #ffffff; border: 1px solid #e2e8f0; margin-bottom: 14px;
+            border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.01);
+        }
+        .faq-item:hover { border-color: #cbd5e1; }
+        .faq-pregunta {
+            padding: 16px 18px; font-weight: 700; color: var(--primary-color); font-size: 0.98rem;
+            cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+        }
+        .faq-pregunta span { transition: transform 0.3s ease; display: inline-block; flex-shrink: 0; }
+        .faq-item.active .faq-pregunta span { transform: rotate(135deg); }
+        .faq-respuesta {
+            padding: 0 18px 0 18px; color: #64748b; font-size: 0.93rem;
+            max-height: 0; overflow: hidden; opacity: 0;
+            transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, padding 0.35s ease;
+        }
+        .faq-item.active .faq-respuesta { max-height: 260px; opacity: 1; padding: 0 18px 18px 18px; }
+
+        /* Modal del Formulario */
+        #modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(5px); z-index: 2000;
+            display: none; justify-content: center; align-items: center; padding: 14px;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        #modal-overlay.activo { opacity: 1; }
+        #seccion-formulario {
+            width: 100%; max-width: 750px; background: #ffffff; border: 1px solid #e2e8f0;
+            padding: 26px 20px; border-radius: 18px; box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            position: relative; max-height: 92vh; overflow-y: auto;
+            transform: scale(0.95); transition: transform 0.3s ease;
+        }
+        #modal-overlay.activo #seccion-formulario { transform: scale(1); }
+
+        .btn-cerrar-modal {
+            position: absolute; top: 14px; right: 16px; background: #f1f5f9;
+            color: var(--primary-color); border: none; font-size: 0.82rem; font-weight: 700;
+            padding: 7px 12px; border-radius: 20px; cursor: pointer; z-index: 5;
+        }
+        .btn-cerrar-modal:hover { background: #e2e8f0; }
+
+        .progress-bar-container { margin-top: 36px; margin-bottom: 22px; }
+        .progress-line-bg { width: 100%; height: 6px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 15px; }
+        .progress-line-fill { height: 100%; background: var(--accent-color); width: 11.1%; transition: width 0.3s ease; }
+        .progress-dots { display: flex; justify-content: space-between; align-items: center; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; background: #cbd5e1; transition: background 0.3s; flex-shrink: 0; }
+        .dot.active { background: var(--accent-color); box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15); }
+
+        .form-step { display: none; min-height: 180px; animation: fadeIn 0.3s ease; }
+        .form-step.active-step { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .form-step h3 { color: var(--primary-color); font-size: clamp(1.25rem, 3.8vw, 1.5rem); margin-bottom: 10px; }
+        .form-step p.step-desc { color: #64748b; font-size: 0.95rem; margin-bottom: 22px; }
+        .form-group-step { margin-bottom: 18px; }
+        .form-group-step label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--primary-color); font-size: 0.92rem; }
+        .form-group-step input, .form-group-step select {
+            width: 100%; padding: 14px; border: 1px solid #cbd5e1; border-radius: 10px;
+            font-size: 16px; background-color: #f8fafc;
+        }
+        .form-group-step input:focus, .form-group-step select:focus { outline: none; border-color: var(--accent-color); background: #fff; }
+
+        .form-navigation-buttons {
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 10px; margin-top: 28px; border-top: 1px solid #f1f5f9; padding-top: 18px;
+        }
+        .btn-paso { padding: 13px 20px; border-radius: 50px; font-weight: 600; font-size: 0.92rem; cursor: pointer; border: none; }
+        .btn-atras { background-color: #f1f5f9; color: #64748b; }
+        .btn-atras:hover { background-color: #e2e8f0; color: var(--primary-color); }
+        .btn-siguiente, .btn-enviar-final { background-color: var(--accent-color); color: white; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25); flex: 1; }
+        .btn-siguiente:hover, .btn-enviar-final:hover { background-color: var(--accent-hover); transform: translateY(-1px); }
+        .btn-atras { flex-shrink: 0; }
+
+        .btn-flotante {
+            position: fixed; bottom: 18px; right: 18px; background-color: var(--accent-color);
+            color: white; width: 54px; height: 54px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-size: 1.4rem;
+            box-shadow: 0 4px 20px rgba(13, 148, 136, 0.4); text-decoration: none; z-index: 999;
+        }
+        .btn-flotante:hover { transform: scale(1.1); }
+
+        /* Botón flotante de WhatsApp (esquina inferior izquierda) */
+        .btn-whatsapp {
+            position: fixed; bottom: 18px; left: 18px; background-color: #25D366;
+            color: white; width: 54px; height: 54px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center;
+            box-shadow: 0 4px 20px rgba(37, 211, 102, 0.45); text-decoration: none; z-index: 999;
+        }
+        .btn-whatsapp svg { width: 26px; height: 26px; }
+        .btn-whatsapp:hover { transform: scale(1.1); }
+
+        /* ================= PAQUETE ÚNICO ================= */
+        .paquete-lista {
+            display: flex; flex-direction: column; gap: 14px; text-align: left;
+            max-width: 640px; margin: 0 auto 28px;
+        }
+        .paquete-item {
+            background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid var(--accent-color);
+            border-radius: 14px; padding: 18px 20px; display: flex; gap: 14px; align-items: flex-start;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        }
+        .paquete-item:nth-child(1) { border-left-color: #93c5fd; background: linear-gradient(135deg, #ffffff 70%, #eff6ff 100%); }
+        .paquete-item:nth-child(2) { border-left-color: #f9a8d4; background: linear-gradient(135deg, #ffffff 70%, #fdf2f8 100%); }
+        .paquete-item:nth-child(3) { border-left-color: #fde68a; background: linear-gradient(135deg, #ffffff 70%, #fefce8 100%); }
+        .paquete-item .icono-paquete { font-size: 1.6rem; line-height: 1; flex-shrink: 0; }
+        .paquete-item h4 { color: var(--primary-color); font-size: 1.02rem; margin-bottom: 4px; font-weight: 700; }
+        .paquete-item p { color: #64748b; font-size: 0.92rem; }
+        .btn-paquete { max-width: 320px; margin: 0 auto; }
+
+        /* ================= ESLOGAN ================= */
+        .section-eslogan { max-width: 1100px; margin: 0 auto 48px; padding: 0 16px; }
+        .eslogan-card {
+            background: linear-gradient(120deg, #eff6ff 0%, #fdf2f8 50%, #fefce8 100%);
+            border: 1px solid #e2e8f0; border-radius: 20px; padding: 28px 20px; text-align: center;
+        }
+        .eslogan-card p {
+            font-size: clamp(1.1rem, 3.8vw, 1.5rem); font-weight: 800; color: var(--primary-color); line-height: 1.4;
+        }
+
+        footer { text-align: center; padding: 32px 20px; color: #94a3b8; font-size: 0.85rem; border-top: 1px solid #f1f5f9; margin-top: 50px; }
+        footer a { color: var(--accent-color); text-decoration: none; font-weight: 500; }
+
+        /* ================= TABLET (≥640px) ================= */
+        @media (min-width: 640px) {
+            .grid-pasos { grid-template-columns: 1fr 1fr; gap: 20px; }
+            .tarjeta-carrusel { width: calc(50% - 8px); min-width: calc(50% - 8px); max-width: calc(50% - 8px); }
+            .hero-container { padding: 32px 24px; }
+        }
+
+        /* ================= TABLET GRANDE / LAPTOP PEQUEÑO (≥768px) ================= */
+        @media (min-width: 768px) {
+            :root { --nav-height: 76px; }
+            nav { padding: 16px 32px; }
+            .nav-logo { font-size: 1.2rem; }
+            .nav-toggle { display: none; }
+            .nav-right { gap: 20px; }
+            .nav-links {
+                position: static; flex-direction: row; align-items: center; width: auto;
+                max-height: none; opacity: 1; overflow: visible; padding: 0; gap: 20px;
+                border-top: none; box-shadow: none;
+            }
+            .nav-links a { padding: 4px 0; font-size: 0.95rem; }
+            .btn-nav-registro { padding: 10px 20px; font-size: 0.95rem; }
+
+            .hero-container {
+                display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;
+                margin: 40px auto; padding: 40px 20px; text-align: left;
+            }
+            .hero-text .btn-principal { width: auto; padding: 14px 32px; }
+            .hero-card { padding: 40px; border-radius: 20px; }
+            .hero-card h3 { font-size: 1.4rem; }
+
+            .section-proceso { margin: 80px auto; padding: 0 20px; }
+            .section-proceso > p { margin-bottom: 40px; }
+
+            .tarjeta-carrusel { padding: 35px 25px; }
+            .carrusel-track { gap: 20px; }
+
+            .faq-pregunta { padding: 20px; font-size: 1rem; }
+            .faq-respuesta { padding: 0 20px 0 20px; }
+            .faq-item.active .faq-respuesta { padding: 0 20px 20px 20px; }
+
+            #seccion-formulario { padding: 40px; border-radius: 20px; max-height: 90vh; }
+            .btn-cerrar-modal { top: 20px; right: 25px; font-size: 0.9rem; padding: 6px 14px; }
+            .btn-paso { padding: 10px 24px; font-size: 0.95rem; }
+            .btn-siguiente, .btn-enviar-final { flex: none; }
+
+            .btn-flotante { bottom: 30px; right: 30px; width: 60px; height: 60px; font-size: 1.6rem; }
+            .btn-whatsapp { bottom: 30px; left: 30px; width: 60px; height: 60px; }
+            .btn-whatsapp svg { width: 30px; height: 30px; }
+            footer { padding: 40px; }
+        }
+
+        /* ================= ESCRITORIO (≥1024px) ================= */
+        @media (min-width: 1024px) {
+            .grid-pasos { grid-template-columns: repeat(4, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- BARRA DE NAVEGACIÓN -->
+    <nav>
+        <div class="nav-logo">Academia Juvenil</div>
+
+        <div class="nav-links" id="navLinks">
+            <a href="#" onclick="cerrarMenu()">Inicio</a>
+            <a href="#beneficios" onclick="cerrarMenu()">Beneficios</a>
+            <a href="#proceso" onclick="cerrarMenu()">Cómo Trabajamos</a>
+            <a href="#control" onclick="cerrarMenu()">Nuestro Control</a>
+            <a href="#faq" onclick="cerrarMenu()">FAQ</a>
+        </div>
+
+        <div class="nav-right">
+            <a href="#" class="btn-nav-registro" onclick="mostrarFormulario()">Registrar</a>
+            <button type="button" class="nav-toggle" onclick="toggleMenu()" aria-label="Abrir menú de navegación" aria-expanded="false" id="navToggleBtn">☰</button>
+        </div>
+    </nav>
+
+    <!-- SECCIÓN HERO -->
+    <div class="hero-container">
+        <div class="hero-text reveal-left">
+            <h1>¿Sientes que tu hijo(a) se esfuerza en la escuela pero no refleja las calificaciones que merece?</h1>
+            <p>Desarrollamos su razonamiento lógico, concentración y hábitos de estudio clave este fin de semana para que gane seguridad y destaque en sus clases.</p>
+            <button type="button" class="btn-principal" onclick="mostrarFormulario()">Registrar Alumno</button>
+        </div>
+
+        <div class="hero-card reveal-right">
+            <h3>Disponibilidad de Horarios</h3>
+            <p>Agenda a tu hijo o hija para saber el horario que tenemos disponible para ti.</p>
+            <div class="badge-cupos">⚠️ Cupos limitados: 12 lugares disponibles</div>
+            <button type="button" class="btn-principal" onclick="mostrarFormulario()" style="background-color: var(--primary-color);">Consultar y Registrar</button>
+        </div>
+    </div>
+
+    <!-- SECCIÓN DE BENEFICIOS (CARRUSEL HORIZONTAL INTERACTIVO) -->
+    <div class="section-proceso reveal" id="beneficios">
+        <div class="badge-proceso">Habilidades Clave</div>
+        <h2>¿Qué desarrollamos en los alumnos?</h2>
+        <p>Enfoque integral orientado al rendimiento escolar y orden mental.</p>
+
+        <div class="carrusel-container">
+            <div class="carrusel-track" id="carruselTrack">
+
+                <div class="tarjeta-carrusel">
+                    <span class="icono-beneficio">🧠</span>
+                    <h4>Razonamiento Lógico</h4>
+                    <p>Ejercicios dinámicos para estimular la resolución de problemas complejos con agilidad y pensamiento analítico superior.</p>
+                </div>
+
+                <div class="tarjeta-carrusel">
+                    <span class="icono-beneficio">🎯</span>
+                    <h4>Enfoque y Concentración</h4>
+                    <p>Técnicas especializadas para evitar distracciones cotidianas y mantener la atención prolongada durante sus estudios.</p>
+                </div>
+
+                <div class="tarjeta-carrusel">
+                    <span class="icono-beneficio">📋</span>
+                    <h4>Organización Mental</h4>
+                    <p>Estructuración óptima de tareas y hábitos de estudio ordenados que facilitan su rutina de aprendizaje diaria.</p>
+                </div>
+
+                <div class="tarjeta-carrusel">
+                    <span class="icono-beneficio">📈</span>
+                    <h4>Mejora Académica</h4>
+                    <p>Refuerzo constante y guiado que se traduce directamente en mejores notas, confianza y seguridad escolar.</p>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="carrusel-controles">
+            <button type="button" class="btn-control-carrusel" onclick="moverCarrusel(-1)">&#10094;</button>
+            <div class="carrusel-puntos" id="carruselPuntos">
+                <span class="punto-carrusel activo" onclick="irACarrusel(0)"></span>
+                <span class="punto-carrusel" onclick="irACarrusel(1)"></span>
+                <span class="punto-carrusel" onclick="irACarrusel(2)"></span>
+                <span class="punto-carrusel" onclick="irACarrusel(3)"></span>
+            </div>
+            <button type="button" class="btn-control-carrusel" onclick="moverCarrusel(1)">&#10095;</button>
+        </div>
+    </div>
+
+    <!-- PAQUETE ÚNICO -->
+    <div class="section-proceso reveal" id="paquete">
+        <div class="badge-proceso">Oferta Especial</div>
+        <h2>Paquete Único: "Academia Juvenil Integral" 🌟</h2>
+        <p>Todo lo que tu hijo y tu familia necesitan para destacar este ciclo escolar en un solo lugar.</p>
+
+        <div class="paquete-lista">
+            <div class="paquete-item reveal">
+                <span class="icono-paquete">📅</span>
+                <div>
+                    <h4>Sesiones Sabatinas de Refuerzo Escolar</h4>
+                    <p>Clases presenciales enfocadas en reforzar conocimientos, regularización y claridad en las materias clave todos los sábados.</p>
+                </div>
+            </div>
+            <div class="paquete-item reveal">
+                <span class="icono-paquete">🤖</span>
+                <div>
+                    <h4>Taller de IA para Estudiantes</h4>
+                    <p>Los niños aprenden de forma divertida y segura a usar herramientas de Inteligencia Artificial para investigar, estructurar sus proyectos y potenciar su creatividad.</p>
+                </div>
+            </div>
+            <div class="paquete-item reveal">
+                <span class="icono-paquete">👨‍👩‍👧‍👦</span>
+                <div>
+                    <h4>Curso de IA para Padres</h4>
+                    <p>Acceso al taller exclusivo para papás, para que aprendan a guiar a sus hijos en el uso de la tecnología y a facilitar sus propias actividades diarias.</p>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" class="btn-principal btn-paquete" onclick="mostrarFormulario()">Quiero este paquete</button>
+    </div>
+
+    <!-- PROCESO -->
+    <div class="section-proceso reveal" id="proceso">
+        <div class="badge-proceso">Nuestro Proceso</div>
+        <h2>Cómo funciona trabajar con nosotros</h2>
+        <p>Un proceso claro y transparente, desde el registro inicial hasta el desarrollo del alumno.</p>
+
+        <div class="grid-pasos">
+            <div class="tarjeta-paso reveal"><span class="numero-paso">1</span><h4>Pre-registro web</h4><p>Llenas los datos básicos del alumno y del tutor directamente desde nuestra plataforma.</p></div>
+            <div class="tarjeta-paso reveal"><span class="numero-paso">2</span><h4>Asignación y contacto</h4><p>Nos comunicamos contigo para confirmarte los horarios y espacios disponibles.</p></div>
+            <div class="tarjeta-paso reveal"><span class="numero-paso">3</span><h4>Sesión de desarrollo</h4><p>El alumno asiste a su clase de lógica y refuerzo con dinámicas de alta disciplina.</p></div>
+            <div class="tarjeta-paso reveal"><span class="numero-paso">4</span><h4>Seguimiento continuo</h4><p>Monitoreamos sus avances y te mantenemos informado de su evolución escolar.</p></div>
+        </div>
+    </div>
+
+    <!-- CONTROL -->
+    <div class="section-proceso reveal" id="control">
+        <div class="badge-proceso">Tecnología Interna</div>
+        <h2>Nuestro control de registros</h2>
+        <p>Sin intermediarios ni confusiones. Todo ordenado de forma automática.</p>
+
+        <div class="grid-pasos">
+            <div class="tarjeta-paso reveal"><span class="numero-paso">1</span><h4>El padre registra</h4><p>Ingresa la información requerida desde su celular o computadora en segundos.</p></div>
+            <div class="tarjeta-paso reveal"><span class="numero-paso">2</span><h4>Se guarda solo</h4><p>La información viaja de inmediato sin que nadie tenga que capturar a mano.</p></div>
+            <div class="tarjeta-paso reveal"><span class="numero-paso">3</span><h4>Base de datos privada</h4><p>Todo se almacena en un entorno seguro, ordenado y listo para consultarse.</p></div>
+            <div class="tarjeta-paso reveal"><span class="numero-paso">4</span><h4>Control absoluto</h4><p>Tú consultas asistencias, horarios y estatus en tiempo real desde tu panel.</p></div>
+        </div>
+    </div>
+
+    <!-- ESLOGAN -->
+    <div class="section-eslogan reveal">
+        <div class="eslogan-card">
+            <p>"Un tropiezo académico no define tu futuro; la constancia sí." 📚✨</p>
+        </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="section-proceso reveal" id="faq">
+        <div class="badge-proceso">Dudas Comunes</div>
+        <h2>Preguntas Frecuentes</h2>
+        <p>Todo lo que necesitas saber antes de registrar a tu hijo o hija.</p>
+
+        <div class="faq-container">
+            <div class="faq-item reveal">
+                <div class="faq-pregunta" onclick="toggleFaq(this)">¿Cuál es el costo del programa? <span>+</span></div>
+                <div class="faq-respuesta">El costo varía según el paquete y los días seleccionados. Al completar tu pre-registro, nos comunicaremos contigo para detallarte las opciones accesibles disponibles.</div>
+            </div>
+            <div class="faq-item reveal">
+                <div class="faq-pregunta" onclick="toggleFaq(this)">¿Cuáles son las edades mínimas y máximas permitidas? <span>+</span></div>
+                <div class="faq-respuesta">El programa está diseñado principalmente para niños y jóvenes cursando nivel primaria y secundaria (generalmente entre 6 y 15 años).</div>
+            </div>
+            <div class="faq-item reveal">
+                <div class="faq-pregunta" onclick="toggleFaq(this)">¿Necesita llevar algún material especial? <span>+</span></div>
+                <div class="faq-respuesta">No es necesario que carguen con material avanzado. Únicamente requerimos que traigan disposición, libreta y lápiz para sus ejercicios prácticos.</div>
+            </div>
+            <div class="faq-item reveal">
+                <div class="faq-pregunta" onclick="toggleFaq(this)">¿Cuánto dura cada sesión de clase? <span>+</span></div>
+                <div class="faq-respuesta">Cada sesión está optimizada con dinámicas de alta concentración, teniendo una duración aproximada de 1.5 a 2 horas durante los fines de semana.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL / FORMULARIO -->
+    <div id="modal-overlay">
+        <div id="seccion-formulario">
+            <button type="button" class="btn-cerrar-modal" onclick="cerrarFormulario()">Volver a la web ✕</button>
+
+            <div class="progress-bar-container">
+                <div class="progress-line-bg"><div class="progress-line-fill" id="progressFill"></div></div>
+                <div class="progress-dots" id="progressDots">
+                    <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+                    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                </div>
+            </div>
+
+            <form id="formRegistro">
+                <div class="form-step active-step" data-step="1">
+                    <h3>Bienvenido a Academia Juvenil</h3>
+                    <p class="step-desc">Estás a pocos pasos de asegurar un espacio de alto desarrollo intelectual y lógico para tu hijo(a) este fin de semana.</p>
+                    <div style="background: var(--card-bg); padding: 18px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+                        <p style="font-size: 0.92rem; color: var(--text-color);">✨ Te guiaremos paso a paso para recopilar sus datos de forma ordenada y rápida. Haz clic en siguiente para comenzar.</p>
+                    </div>
+                </div>
+
+                <div class="form-step" data-step="2">
+                    <h3>1. Datos del Tutor</h3>
+                    <p class="step-desc">¿Cuál es tu nombre completo para el expediente y contacto?</p>
+                    <div class="form-group-step"><label for="nombreTutor">Nombre del padre o tutor:</label><input type="text" id="nombreTutor" required></div>
+                </div>
+
+                <div class="form-step" data-step="3">
+                    <h3>2. Medio de Contacto</h3>
+                    <p class="step-desc">¿A qué número de teléfono o WhatsApp podemos enviarte la confirmación de horarios?</p>
+                    <div class="form-group-step"><label for="telefono">Teléfono / WhatsApp:</label><input type="tel" id="telefono" required></div>
+                </div>
+
+                <div class="form-step" data-step="4">
+                    <h3>3. Datos del Alumno</h3>
+                    <p class="step-desc">¿Cómo se llama el alumno o alumna que ingresará al programa?</p>
+                    <div class="form-group-step"><label for="nombreAlumno">Nombre del Alumno(a):</label><input type="text" id="nombreAlumno" required></div>
+                </div>
+
+                <div class="form-step" data-step="5">
+                    <h3>4. Edad</h3>
+                    <p class="step-desc">¿Qué edad tiene actualmente?</p>
+                    <div class="form-group-step"><label for="edadAlumno">Edad del Alumno:</label><input type="number" id="edadAlumno" required></div>
+                </div>
+
+                <div class="form-step" data-step="6">
+                    <h3>5. Nivel Escolar</h3>
+                    <p class="step-desc">¿En qué nivel escolar se encuentra cursando?</p>
+                    <div class="form-group-step">
+                        <label for="nivelEscolar">Nivel Escolar:</label>
+                        <select id="nivelEscolar" onchange="actualizarGrados()" required>
+                            <option value="">Selecciona una opción</option>
+                            <option value="Primaria">Primaria</option>
+                            <option value="Secundaria">Secundaria</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-step" data-step="7">
+                    <h3>6. Grado Escolar</h3>
+                    <p class="step-desc">¿Qué grado escolar está cursando actualmente?</p>
+                    <div class="form-group-step">
+                        <label for="grado">Grado:</label>
+                        <select id="grado" required><option value="">Selecciona primero el nivel escolar</option></select>
+                    </div>
+                </div>
+
+                <div class="form-step" data-step="8">
+                    <h3>7. Escuela o Institución</h3>
+                    <p class="step-desc">¿A qué escuela o institución pertenece o asiste el alumno?</p>
+                    <div class="form-group-step"><label for="escuelaInstitucion">Escuela / Institución:</label><input type="text" id="escuelaInstitucion" required></div>
+                </div>
+
+                <div class="form-step" data-step="9">
+                    <h3>8. Enfoque y Protección de Datos</h3>
+                    <p class="step-desc">¿Qué área le cuesta más trabajo o le interesa mejorar a tu hijo(a)?</p>
+                    <div class="form-group-step"><label for="areaMejorar">Área de interés o refuerzo:</label><input type="text" id="areaMejorar" placeholder="Ej. Concentración y resolución de problemas"></div>
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 10px; margin-top: 15px;">
+                        <p style="font-size: 0.85rem; color: #64748b; line-height: 1.4;">🔒 <strong>Aviso de Protección:</strong> Sus datos personales y escolares están totalmente protegidos y resguardados de forma privada.</p>
+                    </div>
+                </div>
+
+                <div class="form-navigation-buttons">
+                    <button type="button" class="btn-paso btn-atras" id="btnAtras" onclick="cambiarPaso(-1)" style="visibility: hidden;">← Atrás</button>
+                    <button type="button" class="btn-paso btn-siguiente" id="btnSiguiente" onclick="cambiarPaso(1)">Siguiente →</button>
+                    <button type="submit" class="btn-paso btn-enviar-final" id="btnEnviarFinal" style="display: none;">Enviar datos al sistema 🚀</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <a href="#" class="btn-flotante" onclick="mostrarFormulario(); return false;" title="Registrar Alumno">📝</a>
+
+    <a href="https://wa.me/5214425992262?text=Hola%2C%20me%20interesa%20informaci%C3%B3n%20sobre%20la%20Academia%20Juvenil" class="btn-whatsapp" target="_blank" rel="noopener" title="Escríbenos por WhatsApp" aria-label="Contactar por WhatsApp">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="currentColor"><path d="M16.001 3C9.383 3 4 8.383 4 15.001c0 2.385.669 4.61 1.833 6.508L4 29l7.699-1.804A11.94 11.94 0 0 0 16 27c6.618 0 12-5.383 12-12.001C28 8.383 22.619 3 16.001 3zm.001 21.818c-1.868 0-3.633-.517-5.147-1.415l-.369-.219-4.571 1.071 1.086-4.457-.24-.383A9.77 9.77 0 0 1 5.2 14.999c0-5.404 4.397-9.8 9.801-9.8 5.403 0 9.8 4.396 9.8 9.8 0 5.404-4.397 9.819-9.799 9.819zm5.377-7.339c-.294-.147-1.741-.859-2.011-.957-.269-.098-.466-.147-.662.147-.196.294-.759.957-.931 1.153-.171.196-.343.221-.637.074-.294-.147-1.242-.458-2.365-1.462-.874-.78-1.464-1.744-1.636-2.038-.171-.294-.018-.453.129-.6.132-.132.294-.343.441-.514.147-.171.196-.294.294-.49.098-.196.049-.368-.024-.514-.074-.147-.662-1.597-.907-2.187-.239-.573-.482-.495-.662-.505l-.564-.01c-.196 0-.514.074-.784.368-.269.294-1.027 1.004-1.027 2.449 0 1.445 1.052 2.842 1.199 3.038.147.196 2.07 3.163 5.018 4.435.701.303 1.249.484 1.676.62.704.224 1.345.192 1.851.117.565-.084 1.741-.712 1.986-1.4.245-.688.245-1.278.171-1.4-.073-.123-.269-.196-.563-.343z"/></svg>
+    </a>
+
+    <footer>
+        <p>&copy; 2026 Academia Juvenil • Espacio de desarrollo formativo e intelectual.</p>
+        <p style="margin-top: 8px;"><a href="#" onclick="alert('Aviso de Privacidad: Sus datos personales, de contacto e institucionales son resguardados de forma totalmente privada y segura.'); return false;">Aviso de Privacidad</a></p>
+    </footer>
+
+    <script>
+        const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbxR14ZaiV1Cnib95iGSPGuJ8xMJO8t7FAMo8FXW94soN_sk2or6-pY9JKOH0ttR0zGj/exec";
+        const modalOverlay = document.getElementById('modal-overlay');
+
+        function mostrarFormulario() {
+            cerrarMenu();
+            modalOverlay.style.display = 'flex';
+            setTimeout(() => modalOverlay.classList.add('activo'), 10);
+            document.body.classList.add('modal-abierto');
+        }
+
+        function cerrarFormulario() {
+            modalOverlay.classList.remove('activo');
+            setTimeout(() => {
+                modalOverlay.style.display = 'none';
+                document.body.classList.remove('modal-abierto');
+            }, 300);
+        }
+
+        /* ================= MENÚ MÓVIL (HAMBURGUESA) ================= */
+        const navLinks = document.getElementById('navLinks');
+        const navToggleBtn = document.getElementById('navToggleBtn');
+
+        function toggleMenu() {
+            const abierto = navLinks.classList.toggle('abierto');
+            navToggleBtn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+            navToggleBtn.textContent = abierto ? '✕' : '☰';
+        }
+
+        function cerrarMenu() {
+            navLinks.classList.remove('abierto');
+            navToggleBtn.setAttribute('aria-expanded', 'false');
+            navToggleBtn.textContent = '☰';
+        }
+
+        /* ================= SISTEMA SCROLL REVEAL CON APARICIÓN ESCALONADA ================= */
+        // Aplica un pequeño retraso incremental a cada elemento dentro de un mismo
+        // contenedor (grid-pasos, faq-container, carrusel) para lograr un efecto
+        // de aparición en cascada, elegante y fluido, en vez de que todo aparezca a la vez.
+        function asignarRetrasosEscalonados() {
+            const contenedoresEscalonados = document.querySelectorAll('.grid-pasos, .faq-container');
+            contenedoresEscalonados.forEach(contenedor => {
+                const hijos = contenedor.querySelectorAll(':scope > .reveal');
+                hijos.forEach((el, i) => {
+                    el.style.setProperty('--reveal-delay', `${Math.min(i * 0.09, 0.4)}s`);
+                });
+            });
+        }
+        asignarRetrasosEscalonados();
+
+        const observerOptions = { threshold: 0.15, rootMargin: "0px 0px -60px 0px" };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target); // evita retrigger y mejora el rendimiento
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(el => observer.observe(el));
+
+        /* ================= LÓGICA DEL CARRUSEL FLUIDO SIN TRABAS ================= */
+        let indiceCarrusel = 0;
+        const track = document.getElementById('carruselTrack');
+        const totalTarjetas = document.querySelectorAll('.tarjeta-carrusel').length;
+        let estaMoviendo = false; // Evita que se trabe por múltiples clicks rápidos
+
+        function actualizarCarrusel() {
+            const tarjetas = document.querySelectorAll('.tarjeta-carrusel');
+            if (tarjetas.length === 0) return;
+
+            const esMovil = window.innerWidth <= 768;
+            const tarjetasVisibles = esMovil ? 1 : 2;
+            const maxIndice = totalTarjetas - tarjetasVisibles;
+
+            if (indiceCarrusel > maxIndice) indiceCarrusel = maxIndice;
+            if (indiceCarrusel < 0) indiceCarrusel = 0;
+
+            // Obtenemos el ancho exacto de una tarjeta más el gap
+            const gapActual = esMovil ? 16 : 20;
+            const anchoTarjeta = tarjetas[0].offsetWidth + gapActual;
+            const desplazamiento = indiceCarrusel * anchoTarjeta;
+
+            track.style.transform = `translateX(-${desplazamiento}px)`;
+
+            // Actualizar puntos activos
+            document.querySelectorAll('.punto-carrusel').forEach((punto, index) => {
+                punto.classList.toggle('activo', index === indiceCarrusel);
+            });
+        }
+
+        function moverCarrusel(direccion) {
+            if (estaMoviendo) return; // Bloquea si la animación anterior sigue corriendo
+            estaMoviendo = true;
+
+            const esMovil = window.innerWidth <= 768;
+            const tarjetasVisibles = esMovil ? 1 : 2;
+            const maxIndice = totalTarjetas - tarjetasVisibles;
+
+            indiceCarrusel += direccion;
+            if (indiceCarrusel > maxIndice) indiceCarrusel = 0; // Vuelve al inicio
+            if (indiceCarrusel < 0) indiceCarrusel = maxIndice; // Vuelve al final
+
+            actualizarCarrusel();
+
+            // Libera el bloqueo de clics cuando termine la transición CSS (0.4s)
+            setTimeout(() => {
+                estaMoviendo = false;
+            }, 400);
+        }
+
+        function irACarrusel(indice) {
+            if (estaMoviendo) return;
+            estaMoviendo = true;
+            indiceCarrusel = indice;
+            actualizarCarrusel();
+            setTimeout(() => {
+                estaMoviendo = false;
+            }, 400);
+        }
+
+        window.addEventListener('resize', () => {
+            actualizarCarrusel();
+        });
+
+        /* Grados dinámicos en formulario */
+        function actualizarGrados() {
+            const nivel = document.getElementById('nivelEscolar').value;
+            const selectGrado = document.getElementById('grado');
+            selectGrado.innerHTML = '<option value="">Selecciona el grado</option>';
+
+            if (nivel === 'Primaria') {
+                for (let i = 1; i <= 6; i++) {
+                    let option = document.createElement('option');
+                    option.value = i + (i === 1 ? 'er Grado' : i === 2 ? 'do Grado' : i === 3 ? 'er Grado' : 'to Grado');
+                    option.textContent = i + '° Grado';
+                    selectGrado.appendChild(option);
+                }
+            } else if (nivel === 'Secundaria') {
+                for (let i = 1; i <= 3; i++) {
+                    let option = document.createElement('option');
+                    option.value = i + (i === 1 ? 'er Grado' : i === 2 ? 'do Grado' : 'er Grado');
+                    option.textContent = i + '° Grado (Secundaria)';
+                    selectGrado.appendChild(option);
+                }
+            }
+        }
+
+        /* Lógica de Pasos del Formulario */
+        let pasoActual = 1;
+        const totalPasos = 9;
+
+        function cambiarPaso(direccion) {
+            if (direccion === 1) {
+                if (pasoActual === 2 && !document.getElementById('nombreTutor').value) { alert('Ingresa el nombre del tutor.'); return; }
+                if (pasoActual === 3 && !document.getElementById('telefono').value) { alert('Ingresa tu teléfono.'); return; }
+                if (pasoActual === 4 && !document.getElementById('nombreAlumno').value) { alert('Ingresa el nombre del alumno.'); return; }
+                if (pasoActual === 5 && !document.getElementById('edadAlumno').value) { alert('Ingresa la edad.'); return; }
+                if (pasoActual === 6 && !document.getElementById('nivelEscolar').value) { alert('Selecciona el nivel escolar.'); return; }
+                if (pasoActual === 7 && !document.getElementById('grado').value) { alert('Selecciona el grado escolar.'); return; }
+                if (pasoActual === 8 && !document.getElementById('escuelaInstitucion').value) { alert('Ingresa la escuela.'); return; }
+            }
+
+            pasoActual += direccion;
+            if (pasoActual < 1) pasoActual = 1;
+            if (pasoActual > totalPasos) pasoActual = totalPasos;
+            actualizarVistaPasos();
+        }
+
+        function actualizarVistaPasos() {
+            document.querySelectorAll('.form-step').forEach((paso, index) => {
+                paso.classList.toggle('active-step', index + 1 === pasoActual);
+            });
+
+            document.getElementById('progressFill').style.width = ((pasoActual - 1) / (totalPasos - 1)) * 100 + '%';
+
+            document.querySelectorAll('.dot').forEach((dot, index) => {
+                dot.classList.toggle('active', index + 1 <= pasoActual);
+            });
+
+            document.getElementById('btnAtras').style.visibility = pasoActual === 1 ? 'hidden' : 'visible';
+            document.getElementById('btnSiguiente').style.display = pasoActual === totalPasos ? 'none' : 'inline-block';
+            document.getElementById('btnEnviarFinal').style.display = pasoActual === totalPasos ? 'inline-block' : 'none';
+        }
+
+        function toggleFaq(elemento) {
+            const item = elemento.parentElement;
+            item.classList.toggle('active');
+            elemento.querySelector('span').textContent = item.classList.contains('active') ? '-' : '+';
+        }
+
+        const form = document.getElementById('formRegistro');
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btnEnviarFinal = document.getElementById('btnEnviarFinal');
+            btnEnviarFinal.textContent = "Guardando...";
+            btnEnviarFinal.disabled = true;
+
+            const datos = {
+                nombreTutor: document.getElementById('nombreTutor').value,
+                telefono: document.getElementById('telefono').value,
+                nombreAlumno: document.getElementById('nombreAlumno').value,
+                edadAlumno: document.getElementById('edadAlumno').value,
+                nivelEscolar: document.getElementById('nivelEscolar').value,
+                grado: document.getElementById('grado').value,
+                escuelaInstitucion: document.getElementById('escuelaInstitucion').value,
+                areaMejorar: document.getElementById('areaMejorar').value
+            };
+
+            fetch(URL_APPS_SCRIPT, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datos)
+            }).then(() => {
+                cerrarFormulario();
+                alert('¡Registro exitoso! Los datos se han guardado correctamente.');
+                form.reset();
+                pasoActual = 1;
+                actualizarVistaPasos();
+                btnEnviarFinal.textContent = "Enviar datos al sistema 🚀";
+                btnEnviarFinal.disabled = false;
+            }).catch(() => {
+                alert('Hubo un error al enviar. Inténtalo de nuevo.');
+                btnEnviarFinal.textContent = "Enviar datos al sistema 🚀";
+                btnEnviarFinal.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>
